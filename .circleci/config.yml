@@ -34,13 +34,13 @@ jobs:
 
   frontend-cache:
     docker:
-      - image: circleci/node:8-browsers
+      - image: circleci/node:8
     steps:
       - checkout
       
       # cache yarn deps
       - restore_cache:
-          key: consul-frontend-v12-{{ checksum "ui-v2/yarn.lock" }}
+          key: consul-frontend-v2-{{ checksum "ui-v2/yarn.lock" }}
       
       - run:
           name: install yarn packages
@@ -54,7 +54,7 @@ jobs:
   # build ember so frontend tests run faster
   ember-build:
     docker:
-      - image: circleci/node:8-browsers
+      - image: circleci/node:8
     steps:
       - checkout
       - restore_cache:
@@ -69,7 +69,7 @@ jobs:
   # job to run ember frontend tests
   ember-test:
     docker:
-      - image: circleci/node:8-browsers
+      - image: circleci/node:8
     environment:
       EMBER_TEST_PARALLEL: true #enables test parallelization with ember-exam
       EMBER_TEST_REPORT: test-results/report.xml #outputs test report for CircleCI test summary
@@ -80,6 +80,11 @@ jobs:
           key: consul-frontend-v2-{{ checksum "ui-v2/yarn.lock" }}
       - attach_workspace:
           at: ui-v2
+      - run:
+          name: install chrome
+          command: |
+            wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
       - run:
           working_directory: ui-v2
           command: node_modules/ember-cli/bin/ember exam --split=$CIRCLE_NODE_TOTAL --partition=`expr $CIRCLE_NODE_INDEX + 1` --path dist --silent -r xunit
